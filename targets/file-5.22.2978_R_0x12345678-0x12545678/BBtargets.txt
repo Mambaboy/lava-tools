@@ -1,0 +1,5 @@
+softmagic.c:1830
+softmagic.c:1831
+softmagic.c:1832
+softmagic.c:1833
+softmagic.c:1834

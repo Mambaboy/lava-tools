@@ -1,0 +1,5 @@
+softmagic.c:2146
+softmagic.c:2147
+softmagic.c:2148
+softmagic.c:2149
+softmagic.c:2150

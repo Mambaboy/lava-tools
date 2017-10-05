@@ -1,0 +1,5 @@
+softmagic.c:877
+softmagic.c:878
+softmagic.c:879
+softmagic.c:880
+softmagic.c:881

@@ -1,0 +1,5 @@
+softmagic.c:1095
+softmagic.c:1096
+softmagic.c:1097
+softmagic.c:1098
+softmagic.c:1099

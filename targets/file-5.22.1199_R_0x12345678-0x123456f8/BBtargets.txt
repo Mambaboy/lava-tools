@@ -1,0 +1,5 @@
+softmagic.c:1760
+softmagic.c:1761
+softmagic.c:1762
+softmagic.c:1763
+softmagic.c:1764

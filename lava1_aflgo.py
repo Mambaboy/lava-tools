@@ -30,7 +30,8 @@ class LAVA1:
         self._read_branches()
         
         #
-        self.special=["file-5.22.1415_R_0x12345678-0x12545678"]
+        #self.special=["file-5.22.1415_R_0x12345678-0x12545678"]
+        self.special=None
 
     #----------------------------------------------------------------------
     def _global_config(self):
@@ -221,7 +222,9 @@ class LAVA1:
     #----------------------------------------------------------------------
     def calculate_distance(self):
         """"""
-        for item in self.special:
+        if not self.special is None:
+            self.targets=self.special
+        for item in self.targets:
             file_item_output=os.path.join(self.output_dir,item)
             if not os.path.exists(file_item_output):
                 continue
@@ -233,11 +236,11 @@ class LAVA1:
                 p = subprocess.Popen(args,shell=True, stdout=f, stderr=subprocess.STDOUT)            
                 ret=p.wait()
                 if ret ==0:
-                    logger.info( "calculate distance with aflgo sucess: %s"%item)
+                    logger.info( "calculate with aflgo successful: %s"%item)
                 else:
                     self.exclude.update([item])
                     shutil.rmtree(file_item_output)
-                    logger.info( "calculate distance with aflgo fail: %s",item )
+                    logger.info( "calculate with aflgo fail: %s",item )
     #----------------------------------------------------------------------
     def _set_targets_item(self):
         """

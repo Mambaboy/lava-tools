@@ -19,35 +19,40 @@ class LAVA1:
     """"""
 
     #----------------------------------------------------------------------
-    def __init__(self,compile_flag="gcc",recalculate=False):
+    def __init__(self,compile_flag="gcc",recalculate=False,force_rebuild=False):
         """Constructor"""
         self._global_config()
         
         #get from para
         self.compiler_flag=compile_flag
         self.recalculate=recalculate # default not calculate the distance again
+        self.force_rebuild=force_rebuild
         
         #some init functions
         self._read_branches()
         
         #self.special=["file-5.22.1415_R_0x12345678-0x12545678"]
-        self.special=None
+        self.test_targets=None
 
     #----------------------------------------------------------------------
     def _global_config(self):
         """"""
         #absolute path
         self.output_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava1-output"
+        self.lava1_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/LAVA-1"
+        self.branches_path=os.path.join(self.lava1_dir,"branches.txt") 
+        self.targets_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/targets"
+        
         self.aflgo_clang="/home/xiaosatianyu/infomation/git-2/For_aflgo/aflgo/afl-clang-fast"
         self.aflgo_clang_pp="/home/xiaosatianyu/infomation/git-2/For_aflgo/aflgo/afl-clang-fast++"
-        self.lava1_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/LAVA-1"
-        self.branches_path=os.path.join(self.lava1_dir,"branches.txt")        
+        self.afl_clang="/home/xiaosatianyu/workspace/git/afl/afl-clang-fast"
+        self.afl_clang_pp="/home/xiaosatianyu/workspace/git/afl/afl-clang-fast++"
+        
         self.script_getdistance="/home/xiaosatianyu/infomation/git-2/For_aflgo/aflgo/scripts/genDistance.sh"
-        self.targets_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/targets"
         self.python_xiaosa_path="/home/xiaosatianyu/.virtualenvs/xiaosa/bin/python"
         
         #global variable
-        self.all_compiler_flag=["gcc","clang","aflgo_get","aflgo_instrument"]
+        self.all_compiler_flag=["gcc","clang","aflgo_get","aflgo_instrument","afl"]
         self.extendion_num=3
         self.targets=set()
         self.exclude=set()
@@ -90,7 +95,7 @@ class LAVA1:
         CC=self.aflgo_clang
         CXX=self.aflgo_clang_pp
         distance=os.path.join(self.output_dir,item,"distance.cfg.txt")
-        other_flag=" -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"  
+        other_flag=" -v"  
         
         #add to the flags
         CFLAGS+=" -distance="+distance+other_flag
@@ -180,23 +185,53 @@ class LAVA1:
             +" CXXFLAGS="+qutation+CXXFLAGS+qutation
         return [para_str]
     
-  
+
+    #----------------------------------------------------------------------
+    def _get_configure_para_for_afl(self,file_source_item_dir):
+        """"""
+        para_str="./configure --enable-static --disable-shared " 
+        prefix=file_source_item_dir+"/lava-install"
+        CFLAGS="-ggdb -fvisibility=default"
+        CXXFLAGS="-ggdb -fvisibility=default" 
+        qutation='\"' 
+        
+        #for clang
+        CC=self.afl_clang
+        CXX=self.aflgo_clang_pp       
+        
+        #total
+        para_str=para_str\
+            +" --prefix="+prefix\
+            +" CC="+CC\
+            +" CXX="+CXX\
+            +" CFLAGS="+qutation+CFLAGS+qutation\
+            +" CXXFLAGS="+qutation+CXXFLAGS+qutation
+        return [para_str]              
         
     #----------------------------------------------------------------------
     def _build_file_each(self,file_source_item_dir):
         """"""
         item=os.path.basename(file_source_item_dir)
+        
+        
+        #1.check if shoul build
         file_target_item_path=os.path.join(self.targets_dir,item,item+"-"+self.compiler_flag)
-        if self.compiler_flag=="gcc" and  os.path.exists(file_target_item_path):
-            #logger.info("%s with %s has been built, do not need build again",item,self.compiler_flag)
-            return True
+        if self.compiler_flag=="gcc" and  os.path.exists(file_target_item_path) and not self.force_rebuild:
+            return 
+        
         output_check_file=os.path.join(self.output_dir,item,"BBcalls.txt")
-        if self.compiler_flag=="aflgo_get" and os.path.exists(output_check_file):
-            return
+        if self.compiler_flag=="aflgo_get" and os.path.exists(output_check_file) and not self.force_rebuild :
+            return 
+        
         output_check_file=os.path.join(self.output_dir,item,"distance.cfg.txt")
-        if self.compiler_flag=="aflgo_instrument" and os.path.exists(output_check_file):
-            return
-        #0 build new
+        if self.compiler_flag=="aflgo_instrument" and os.path.exists(output_check_file) and not self.force_rebuild :
+            return 
+        
+        file_target_item_path=os.path.join(self.targets_dir,item,item+"-"+self.compiler_flag)
+        if self.compiler_flag=="afl" and  os.path.exists(file_target_item_path) and not self.force_rebuild:
+            return         
+        
+        #2 build new
         pwd=file_source_item_dir
         item=os.path.basename(file_source_item_dir)
         f=open("/tmp/log","wt")
@@ -207,38 +242,41 @@ class LAVA1:
             ret=p.wait()
             if ret < 0:
                 logger.info("make distclean fail,but not return:%s"%item)
-        #2. autoreconf -f -i
+        #3. autoreconf -f -i
         args = ["autoreconf","-i","-f"]
         p = subprocess.Popen(args, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
         ret=p.wait()
         if ret != 0:
-            logger.info("autoreconf fail:%s"%item)
+            logger.warning("autoreconf fail:%s"%item)
             return False
-        #3. configure
+        #4. configure
         if  self.compiler_flag=="clang":
-            args=self._get_configure_para_with_normal_clang(file_source_item_dir)
+            cargs=self._get_configure_para_with_normal_clang(file_source_item_dir)
             logger.info("compiler the binary with normal clang")
         elif  self.compiler_flag=="aflgo_get":
-            args=self._get_configure_para_for_distance(file_source_item_dir)
+            cargs=self._get_configure_para_for_distance(file_source_item_dir)
             logger.info("compiler the binary with aflgo_get")
         elif self.compiler_flag=="aflgo_instrument":
-            args=self._get_configure_para_for_instrument(file_source_item_dir)
-            logger.info("compiler the binary with aflgo_instrument")            
+            cargs=self._get_configure_para_for_instrument(file_source_item_dir)
+            logger.info("compiler the binary with aflgo_instrument") 
+        elif self.compiler_flag=="afl":
+            cargs=self._get_configure_para_for_afl(file_source_item_dir)
+            logger.info("compiler the binary with afl")             
         else:
-            args=self._get_configure_para_with_gcc(file_source_item_dir)
+            cargs=self._get_configure_para_with_gcc(file_source_item_dir)
             logger.info( "compiler the binary with aflgo")
         
-        p = subprocess.Popen(args,shell=True, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
+        p = subprocess.Popen(cargs,shell=True, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
         ret=p.wait()
         if ret != 0:
-            logger.info( "configure fail:%s"%item)
+            logger.warning( "configure fail:%s"%item)
             return False         
-        #4. make
+        #5. make
         args = ["make","-j8"]     
         p = subprocess.Popen(args, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
         ret=p.wait()
         if ret != 0:
-            logger.info( "make fail:%s"%item)
+            logger.warning( "make fail:%s"%item)
             return False 
         logger.info( "build %s successful"%item)
             
@@ -264,8 +302,8 @@ class LAVA1:
     #----------------------------------------------------------------------
     def calculate_distance(self):
         """"""
-        if not self.special is None:
-            self.targets=self.special
+        if not self.test_targets is None:
+            self.targets=self.test_targets
         for item in self.targets:
             file_item_output=os.path.join(self.output_dir,item)
             #check if should recalculate
@@ -295,6 +333,10 @@ class LAVA1:
         if has the BBtargets.txt, add to the targets set, and move the BBtargets.txt to the sub-output dir in aflgo_get
         if has the distance.cfg.txt and not empty, add to the targets in aflgo_instrument
         """
+        if not self.test_targets is None:
+            self.targets=self.test_targets
+            return
+        
         if self.compiler_flag !="aflgo_get" and self.compiler_flag!="aflgo_instrument":
             self.targets=copy.deepcopy(self.branches)
             return
@@ -336,14 +378,13 @@ class LAVA1:
             if not os.path.exists(target_item_dir):
                 os.makedirs(target_item_dir) 
             file_target_item_binary_path=os.path.join(self.targets_dir,item,item+"-"+self.compiler_flag)
-            #if not os.path.exists(file_target_item_binary_path):
             shutil.copy(file_item_src_path, file_target_item_binary_path)     
             #2. get the crash
             crash_item_src_path=os.path.join(self.lava1_dir,item,"CRASH_INPUT")
             crash_target_item_path=os.path.join(self.targets_dir,item,"CRASH_INPUT")
             if not os.path.exists(crash_target_item_path):
                 shutil.copy(crash_item_src_path, crash_target_item_path)            
-                
+        logger.info("get %s binaries ok", self.compiler_flag)       
 
     #----------------------------------------------------------------------
     def make_BBtargets(self):
@@ -411,7 +452,7 @@ class LAVA1:
     #----------------------------------------------------------------------
     def build_files_all(self,compiler_flag="gcc"):
         """
-        @compiler_flag: gcc,clang,aflgo_get,aflgo_instrument
+        @compiler_flag: gcc,clang,aflgo_get,aflgo_instrument,afl
         """
         #copy all the branches
         self.checkout_files_all_targets()
@@ -421,7 +462,9 @@ class LAVA1:
         self._set_targets_item()
         for item in self.targets:
             file_target_dir=os.path.join(self.lava1_dir,item)
-            flag=self._build_file_each(file_target_dir)    
+            flag=self._build_file_each(file_target_dir) 
+        # get the output
+        self.get_all_files_crash()
 
     #----------------------------------------------------------------------
     def build_with_aflgo_get(self):
@@ -430,27 +473,40 @@ class LAVA1:
         self.make_BBtargets()
         #2. build all files with aflgo, but not instrument
         self.build_files_all(compiler_flag="aflgo_get")
-        #3. get the output
-        self.get_all_files_crash()
+        #calculation
         self.calculate_distance()
     #----------------------------------------------------------------------
     def build_with_gcc(self):
         """"""
         self.build_files_all(compiler_flag="gcc")
-        self.get_all_files_crash()
+        
     
     #----------------------------------------------------------------------
     def build_with_aflgo_instrument(self):
         """"""
         self.build_files_all(compiler_flag="aflgo_instrument")
-        self.get_all_files_crash()        
+                      
+    #----------------------------------------------------------------------
+    def build_with_normal_afl(self,compiler_flag="afl"):
+        """"""
+        self.build_files_all(compiler_flag="afl")
+       
+        
       
 
 if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
-    lava1=LAVA1()
-    #lava1.build_with_gcc()
-    lava1.build_with_aflgo_get()
-    lava1.build_with_aflgo_instrument()
+    lava1=LAVA1(force_rebuild=True)
+    flag=3
+    
+    if flag==1:
+        lava1.build_with_gcc()
+    elif flag==2:
+        lava1.build_with_aflgo_get()
+    elif flag==3: 
+        lava1.build_with_aflgo_instrument()
+    elif flag==4:
+        lava1.build_with_normal_afl(compiler_flag="afl")
+        
     logger.info("successs")

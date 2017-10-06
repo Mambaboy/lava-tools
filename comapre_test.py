@@ -17,7 +17,7 @@ class Compare_test:
     """"""
 
     #----------------------------------------------------------------------
-    def __init__(self,afl_upper=6):
+    def __init__(self):
         """Constructor"""
         self._global_config()
         
@@ -25,8 +25,7 @@ class Compare_test:
         self._read_branches()
         
         #global variable
-        self.afl_start_nums=0
-        self.afl_start_upper=afl_upper
+       
         
         
     #----------------------------------------------------------------------
@@ -51,12 +50,12 @@ class Compare_test:
                 self.branches.update(["file-5.22."+lines.split("\n")[0]])     
                 
     #----------------------------------------------------------------------
-    def _set_targets_item(self):
+    def _set_targets(self):
         """  """
         for item in os.listdir(self.targets_dir):
             item_dir=os.path.join(self.targets_dir,item)
             binary_afl=os.path.join(item_dir,item+"-afl")
-            binary_aflgo_instrument=os.path.join(item_dir+"-aflgo_instrument")
+            binary_aflgo_instrument=os.path.join(item_dir,item+"-aflgo_instrument")
             if os.path.exists(binary_afl) and os.path.exists(binary_aflgo_instrument):
                 self.targets.update([item])                       
         
@@ -73,11 +72,19 @@ class Compare_test:
     def set_fuzzing_config(self):
         """"""
         self.workspace="/tmp/compare_test"
-        self.afl_count=1
-        self.time_limit=4*60*60 # second
+        
         self.seed_dir=os.path.join(os.path.dirname(self.targets_dir),"seed")
         self.afl_engine_path="/home/xiaosatianyu/workspace/git/afl/afl-fuzz"
         self.input_from="file"
+        self.afl_input_para=["@@"]
+        
+        #afl start nums and counts
+        self.afl_count=1  # for each number of test
+        self.afl_start_nums=0
+        self.afl_start_upper=6   
+        
+        #time limited
+        self.time_limit=4*60*60 # second
     
     #----------------------------------------------------------------------
     def check_afl_engines_too_many(self):
@@ -87,9 +94,9 @@ class Compare_test:
         False: can continue open afl
         """
         if self.afl_start_nums >self.afl_start_upper:
-            return True
+            return True #can not gon on openning afl 
         else:
-            return False
+            return False #can gon on openning afl 
         
     
     #----------------------------------------------------------------------
@@ -98,47 +105,65 @@ class Compare_test:
         #1. pre for fuzzing
         self.pre_for_test()
         #2. start the fuzzing
-        for target in self.targets:
-            if self.afl_start_nums >
-        
-        self.start_all_targets()
+        for item in self.targets:
+            #2.1check resource
+            while (self.check_afl_engines_too_many()):
+                #wait resource for afl
+                time.sleep(1)
+                            
+            #2.2 begin to start
+            file_target_item=os.path.join(self.targets_dir,item)
+            self.start_one_target(file_target_item)
+            
         
     #----------------------------------------------------------------------
-    def start_one_couple_in_a_thread(self):
+    def start_one_target(self,file_target_item):
         """"""
+        #0. set some information
+        item=os.path.basename(file_target_item)
+        binary_afl_path=os.path.join(file_target_item,item+"-afl")
+        binary_aflgo_instrument_path=os.path.join(file_target_item,item+"-afl_instrument")
+        
+        work_dir=os.path.join(self.workspace,item)
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+        
+        afl_count=self.afl_count
+        time_limit=self.time_limit
+        
+        afl_engine=self.afl_engine_path
+        
+        input_from=self.input_from
+        afl_input_para=self.afl_input_para
+        
+        seed_dir=self.seed_dir
+        
         #1. start the AFl with the couple binaries
-        fuzzer1=Fuzzer(binary_path, work_dir, afl_count=1, library_path=None, 
-                      time_limit=None, 
-                      target_opts=None, 
-                      extra_opts=None, 
-                      create_dictionary=False, 
-                      seeds=None, crash_mode=False, 
-                      never_resume=False, qemu=True, 
-                      stuck_callback=None, 
-                      force_interval=None, 
-                      job_dir=None, afl_engine=None, 
-                      input_from='stdin', 
-                      afl_input_para=None, 
+        fuzzer_afl=Fuzzer(binary_afl_path , work_dir, afl_count=1, 
+                      time_limit=time_limit, 
+                      seed_dir=seed_dir, crash_mode=False, 
+                      qemu=False, 
+                      job_dir=None, afl_engine=afl_engine, 
+                      input_from=input_from, 
+                      afl_input_para=afl_input_para,afl_flag="afl"
                       )
         
-        fuzzer1=Fuzzer(binary_path, work_dir, afl_count=1, library_path=None, 
-                           time_limit=None, memory="8G", 
-                          target_opts=None, 
-                          extra_opts=None, 
-                          create_dictionary=False, 
-                          seeds=None, crash_mode=False, 
-                          never_resume=False, qemu=True, 
-                          stuck_callback=None, 
-                          force_interval=None, 
-                          job_dir=None, afl_engine=None, 
-                          input_from='stdin', 
-                          afl_input_para=None, 
-                          comapre_afl=False, 
-                          strategy_id='0', multi_afl=False)
+        fuzzer_aflgo_instrument=Fuzzer(binary_aflgo_instrument_path, work_dir, afl_count=1, 
+                           time_limit=time_limit, 
+                          seed_dir=seed_dir, crash_mode=False, 
+                          qemu=False, 
+                          job_dir=None, afl_engine=afl_engine, 
+                          input_from=input_from, 
+                          afl_input_para=afl_input_para,afl_flag="afl_instrument"
+                          )        
         
-        fuzzer1.start
+        fuzzer_afl.start() 
+        fuzzer_aflgo_instrument.start() 
+        
+        self.afl_start_nums+=1
         
         #2. start the listner for the crash time and check if the crash is the target crash
+        
         
         #3. kill the the afl and return this thread
         
@@ -157,6 +182,7 @@ if __name__ == '__main__':
     logger.info("start")
     
     compare_test=Compare_test()
+    compare_test.start_all_targets()
     
     
     logger.info("successs")

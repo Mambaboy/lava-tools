@@ -1,1 +1,9 @@
-vasprintf.c:76
+funcs.c:66
+funcs.c:92
+softmagic.c:430
+softmagic.c:233
+softmagic.c:86
+funcs.c:232
+magic.c:478
+magic.c:354
+file.c:497

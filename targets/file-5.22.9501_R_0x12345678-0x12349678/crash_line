@@ -1,1 +1,8 @@
 funcs.c:62
+funcs.c:90
+readelf.c:1328
+elfclass.h:58
+funcs.c:246
+magic.c:475
+magic.c:353
+file.c:497

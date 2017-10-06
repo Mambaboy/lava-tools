@@ -1,5 +1,0 @@
-funcs.c:323
-funcs.c:324
-funcs.c:325
-funcs.c:326
-funcs.c:327

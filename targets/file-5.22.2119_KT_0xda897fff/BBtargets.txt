@@ -1,5 +1,0 @@
-fmtcheck.c:182
-fmtcheck.c:183
-fmtcheck.c:184
-fmtcheck.c:185
-fmtcheck.c:186

@@ -1,5 +1,0 @@
-softmagic.c:419
-softmagic.c:420
-softmagic.c:421
-softmagic.c:422
-softmagic.c:423

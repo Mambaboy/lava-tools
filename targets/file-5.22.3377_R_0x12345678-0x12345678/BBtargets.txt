@@ -1,5 +1,0 @@
-vasprintf.c:74
-vasprintf.c:75
-vasprintf.c:76
-vasprintf.c:77
-vasprintf.c:78

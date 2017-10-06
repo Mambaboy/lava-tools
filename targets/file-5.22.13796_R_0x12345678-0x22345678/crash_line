@@ -1,1 +1,8 @@
 readelf.c:500
+readelf.c:888
+readelf.c:1070
+elfclass.h:68
+funcs.c:246
+magic.c:475
+magic.c:353
+file.c:497

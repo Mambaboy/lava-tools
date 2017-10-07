@@ -68,7 +68,7 @@ class LAVA1:
     def checkout_files_all_targets(self):
         """"""
         file_source_dir=os.path.join(self.lava1_dir,"file-5.22")
-        for item in self.branches:
+        for item in self.targets:
             file_source_item_dir=os.path.join(self.lava1_dir,item)
             if os.path.exists(file_source_item_dir):
                 continue
@@ -231,6 +231,23 @@ class LAVA1:
         if self.compiler_flag=="afl" and  os.path.exists(file_target_item_path) and not self.force_rebuild:
             return         
         
+        #2. remove the old information
+        if self.compiler_flag=="aflgo_get":
+            file_output_item=os.path.join(self.output_dir,item)
+            for infos in os.listdir(file_output_item):
+                infos_path=os.path.join(file_output_item,infos)
+                if "BBtargets" in infos:
+                    continue
+                if "dot" in infos:
+                    shutil.rmtree(infos_path)
+                    continue
+                #check if rm the distance out
+                if "distance" in infos:
+                    if not self.recalculate:
+                        continue
+                os.remove(infos_path)
+                
+     
         #2 build new
         pwd=file_source_item_dir
         item=os.path.basename(file_source_item_dir)
@@ -271,7 +288,7 @@ class LAVA1:
         if ret != 0:
             logger.warning( "configure fail:%s"%item)
             return False         
-        #5. make
+        #5. make       
         args = ["make","-j8"]     
         p = subprocess.Popen(args, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
         ret=p.wait()
@@ -497,8 +514,8 @@ class LAVA1:
 if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
-    lava1=LAVA1(force_rebuild=True)
-    flag=3
+    lava1=LAVA1(force_rebuild=True,recalculate=False)
+    flag=2
     
     if flag==1:
         lava1.build_with_gcc()

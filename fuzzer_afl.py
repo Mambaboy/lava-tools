@@ -21,7 +21,7 @@ class Fuzzer(object):
         target_opts=None, extra_opts=None, create_dictionary=False,
         seeds=None, crash_mode=False, never_resume=False, qemu=False, stuck_callback=None,
         force_interval=None, job_dir=None,
-        afl_engine=None,input_from='stdin',afl_input_para=None, seed_dir=None,afl_flag=None
+        afl_engine=None,input_from='stdin',afl_input_para=None, seed_dir=None,afl_flag=None,aflgo_time="60m"
     ):
         '''
         :param binary_path: path to the binary to fuzz. List or tuple for multi-CB.
@@ -62,6 +62,7 @@ class Fuzzer(object):
         self.fzr_start_time =time.time()  #the start time of the fuzzer
         self.seed_dir       =seed_dir
         self.afl_flag       =afl_flag
+        self.aflgo_time     =aflgo_time
 
         Fuzzer._perform_env_checks() #系统环境配置
         
@@ -84,7 +85,7 @@ class Fuzzer(object):
                 #self.job_dir+="-shelfish"
         
         self.in_dir   = os.path.join(self.job_dir, "input") #afl的输入目录
-        self.out_dir  = os.path.join(self.job_dir, "sync") #afl和driller配合输出目录
+        self.out_dir  = os.path.join(self.job_dir, self.afl_flag) #afl和driller配合输出目录
         #self.sole_out_dir  = os.path.join(self.job_dir, "sole") #对此afl的输出目录,没有和driller对比
 
         
@@ -101,7 +102,7 @@ class Fuzzer(object):
         ##end------------------------------------------
                 
         # test if we're resuming an old run  #判断标准是是否存在afl的输出文件
-        self.resuming  = bool('fuzzer-0-'+self.afl_flag in os.listdir(self.out_dir)) if os.path.isdir(self.out_dir) else False
+        self.resuming  = bool('fuzzer-0' in os.listdir(self.out_dir)) if os.path.isdir(self.out_dir) else False
         if self.resuming:
             # 避免第二次跑的时候因为queue中有crash而不跑
             os.environ['AFL_SKIP_CRASHES'] = "1"       
@@ -131,7 +132,8 @@ class Fuzzer(object):
             try:
                 os.makedirs(self.in_dir)
             except OSError:
-                l.warning("unable to create in_dir \"%s\"", self.in_dir)
+                pass
+                #l.warning("unable to create in_dir \"%s\"", self.in_dir)
                 
             # populate the input directory
             self._initialize_seeds() #初始化复制测试用例
@@ -166,6 +168,7 @@ class Fuzzer(object):
 
     def kill(self):
         for p in self.procs:
+            print  p
             p.terminate()
             p.wait()
 
@@ -289,8 +292,10 @@ class Fuzzer(object):
                 except Exception as e:
                     continue
                 crash_path = os.path.join(crashes_dir, crash)
-                with open(crash_path, 'rb') as f:
-                    crashes.add(f.read())
+                #get the path not the content
+                crashes.add(crash_path)
+                #with open(crash_path, 'rb') as f:
+                    #crashes.add(f.read())
 
         return list(crashes)
 
@@ -409,15 +414,18 @@ class Fuzzer(object):
         args += ["-i", self.in_dir]
             
         args += ["-o", self.out_dir] 
+        
+        if self.afl_flag=="aflgo_instrument":
+            args+=["-z","exp","-c",self.aflgo_time]
             
         if self.crash_mode:
             args += ["-C"]
 
         if self.fuzz_id == 0:
-            args += ["-M", "fuzzer-%d-%s"% (self.fuzz_id,self.afl_flag)]
+            args += ["-M", "fuzzer-%d"% (self.fuzz_id)]
             #outfile = "fuzzer-%d.log" % self.fuzz_id
         else:
-            args += ["-S", "fuzzer-%d-%s" % (self.fuzz_id,self.afl_flag)]  #启动多个afl
+            args += ["-S", "fuzzer-%d" % (self.fuzz_id)]  #启动多个afl
             #outfile = "fuzzer-%d.log" % self.fuzz_id
 
 
@@ -445,7 +453,7 @@ class Fuzzer(object):
             #args_cpoy[4]=self.sole_out_dir # modify the -o parameter
         
         #time.sleep(1)
-        print args
+        #print args
         #drop the output
         with open('/dev/null', 'wb') as devnull:
             fp = devnull

@@ -97,14 +97,14 @@ class Compare_test:
         self.pre_for_test()
         #2. start the fuzzing
         self.pp=[]
-        
+
         #for test
-        if 1:
+        if 0:
             for item in self.targets:
                 file_target_item=os.path.join(self.targets_dir,item)
                 self.start_one_compare_target(file_target_item)
-                      
-               
+
+
         for item in self.targets:
             #2.1check resource
             while(True):
@@ -164,14 +164,14 @@ class Compare_test:
         binary_afl_path=os.path.join(file_target_item,item+"-afl")
         afl_engine=self.afl_engine_path
         fuzzer_afl=Fuzzer(binary_afl_path , work_dir, afl_count=afl_count, 
-                                  time_limit=time_limit, seed_dir=seed_dir,  afl_engine=afl_engine, 
-                          input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
+                          time_limit=time_limit, seed_dir=seed_dir,  afl_engine=afl_engine, 
+                                  input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
 
         afl_engine=self.aflgo_engine_path
         binary_aflgo_instrument_path=os.path.join(file_target_item,item+"-aflgo_instrument")
         fuzzer_aflgo_instrument=Fuzzer(binary_aflgo_instrument_path, work_dir, afl_count=afl_count, 
-                                               time_limit=time_limit, seed_dir=seed_dir, afl_engine=afl_engine, 
-                                       input_from=input_from, afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time="240m" )        
+                                       time_limit=time_limit, seed_dir=seed_dir, afl_engine=afl_engine, 
+                                               input_from=input_from, afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time="240m" )        
 
         #2. start the afl engines
         afl_start_time=time.time()

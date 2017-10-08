@@ -82,8 +82,8 @@ class Compare_test:
         self.afl_input_para=["@@"]
 
         #afl start nums and counts
-        self.afl_count=1  # for each number of test
-        self.cpu_num=8
+        self.afl_count=4  # for each number of test
+        self.cpu_num=160
         self.compare_upper_nums=(self.cpu_num/(2*self.afl_count)-1) if (self.cpu_num/(2*self.afl_count)-1)!=0 else 1
 
         #time limited
@@ -99,7 +99,7 @@ class Compare_test:
         self.pp=[]
         
         #for test
-        if 0:
+        if 1:
             for item in self.targets:
                 file_target_item=os.path.join(self.targets_dir,item)
                 self.start_one_compare_target(file_target_item)
@@ -197,7 +197,12 @@ class Compare_test:
                     logger.info("can not find unique crash in aflgo")
                 break
             #check for the afl crashes
-            fuzz_afl_crashes=fuzzer_afl.crashes()   
+            fuzz_afl_crashes=fuzzer_afl.crashes()
+            fuzz_afl_crashes.sort()
+            
+            fuzz_aflgo_crashes=fuzzer_aflgo_instrument.crashes()  
+            fuzz_aflgo_crashes.sort()            
+            
             if not find_afl_unique_crash_flag:
                 for afl_crahes_path in fuzz_afl_crashes:
                     if afl_crahes_path in crashes_cached:
@@ -210,7 +215,6 @@ class Compare_test:
                         fuzzer_afl.remove_fuzzer()
                         break	
             #check for tha aflgo
-            fuzz_aflgo_crashes=fuzzer_aflgo_instrument.crashes()   
             if not find_aflgo_unique_crash_flag:
                 for aflgo_crahes_path in fuzz_aflgo_crashes:
                     if aflgo_crahes_path in crashes_cached:

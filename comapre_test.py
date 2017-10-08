@@ -69,6 +69,10 @@ class Compare_test:
         self._set_targets()  
         #2. set the fuzzing config
         self.set_fuzzing_config()
+        
+        #3. clean the workplace
+        if os.path.exists(self.workspace):
+            shutil.rmtree(self.workspace)
 
     #----------------------------------------------------------------------
     def set_fuzzing_config(self):
@@ -99,7 +103,7 @@ class Compare_test:
         self.pp=[]
         
         #for test
-        if 1:
+        if 0:
             for item in self.targets:
                 file_target_item=os.path.join(self.targets_dir,item)
                 self.start_one_compare_target(file_target_item)

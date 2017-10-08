@@ -22,7 +22,11 @@ class Fuzzer(object):
         seeds=None, crash_mode=False, never_resume=False, qemu=False, stuck_callback=None,
         force_interval=None, job_dir=None,
         afl_engine=None,input_from='stdin',afl_input_para=None, seed_dir=None,afl_flag=None,aflgo_time="60m"
+<<<<<<< HEAD
+    ):
+=======
         ):
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
         '''
         :param binary_path: path to the binary to fuzz. List or tuple for multi-CB.
         :param work_dir: the work directory which contains fuzzing jobs, our job directory will go here
@@ -134,7 +138,11 @@ class Fuzzer(object):
             except OSError:
                 pass
                 #l.warning("unable to create in_dir \"%s\"", self.in_dir)
+<<<<<<< HEAD
+                
+=======
 
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
             # populate the input directory
             self._initialize_seeds() #初始化复制测试用例
 
@@ -412,12 +420,19 @@ class Fuzzer(object):
         args = [self.afl_path] #aflfuzz的路径
 
         args += ["-i", self.in_dir]
-            
+
         args += ["-o", self.out_dir] 
+<<<<<<< HEAD
         
         if self.afl_flag=="aflgo_instrument":
             args+=["-z","exp","-c",self.aflgo_time]
             
+=======
+
+        if self.afl_flag=="aflgo_instrument":
+            args+=["-z","exp","-c",self.aflgo_time]
+
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
         if self.crash_mode:
             args += ["-C"]
 

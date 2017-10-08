@@ -281,7 +281,7 @@ class LAVA1:
             logger.info("compiler the binary with afl")             
         else:
             cargs=self._get_configure_para_with_gcc(file_source_item_dir)
-            logger.info( "compiler the binary with aflgo")
+            logger.info( "compiler the binary with gcc")
         
         p = subprocess.Popen(cargs,shell=True, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
         ret=p.wait()
@@ -515,7 +515,7 @@ if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
     lava1=LAVA1(force_rebuild=True,recalculate=False)
-    flag=2
+    flag=1
     
     if flag==1:
         lava1.build_with_gcc()

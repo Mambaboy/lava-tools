@@ -82,7 +82,7 @@ class Compare_test:
         self.afl_input_para=["@@"]
 
         #afl start nums and counts
-        self.afl_count=2  # for each number of test
+        self.afl_count=1  # for each number of test
         self.cpu_num=8
         self.compare_upper_nums=(self.cpu_num/(2*self.afl_count)-1) if (self.cpu_num/(2*self.afl_count)-1)!=0 else 1
 
@@ -120,7 +120,7 @@ class Compare_test:
 
             #2.2 begin to start
             file_target_item=os.path.join(self.targets_dir,item)
-            logger.info("begin to test %s",item)
+            
             p = multiprocessing.Process(target=self.start_one_compare_target, args=(file_target_item,))
             p.start()
             self.pp.append(p)
@@ -149,7 +149,7 @@ class Compare_test:
         #0. set some information
         test_start_time=time.time()
         item=os.path.basename(file_target_item) 
-        logger.info("step in  to test %s",item)
+        logger.info("begin to test %s",item)
         work_dir=os.path.join(self.workspace,item)
         if  os.path.exists(work_dir):
             shutil.rmtree(work_dir)
@@ -205,7 +205,7 @@ class Compare_test:
                     crashes_cached.add(afl_crahes_path)
                     if self.check_crashes_unique_in_version(binary_afl_path,afl_crahes_path):
                         first_afl_unique_crash=afl_crahes_path
-                        logger.info("a crash unique: %s\n",afl_crahes_path)
+                        #logger.info("a crash unique: %s\n",afl_crahes_path)
                         find_afl_unique_crash_flag=True
                         fuzzer_afl.remove_fuzzer()
                         break	
@@ -218,7 +218,7 @@ class Compare_test:
                     crashes_cached.add(aflgo_crahes_path)
                     if self.check_crashes_unique_in_version(binary_aflgo_instrument_path,aflgo_crahes_path):
                         first_aflgo_unique_crash=aflgo_crahes_path
-                        logger.info("a crash unique: %s\n",aflgo_crahes_path)
+                        #logger.info("a crash unique: %s\n",aflgo_crahes_path)
                         find_aflgo_unique_crash_flag=True
                         fuzzer_aflgo_instrument.remove_fuzzer()
                         break	

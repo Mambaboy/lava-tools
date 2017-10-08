@@ -82,8 +82,13 @@ class Compare_test:
         self.afl_input_para=["@@"]
 
         #afl start nums and counts
-        self.afl_count=1  # for each number of test
+<<<<<<< HEAD
+        self.afl_count=4  # for each number of test
+        self.cpu_num=160
+=======
+        self.afl_count=2  # for each number of test
         self.cpu_num=8
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
         self.compare_upper_nums=(self.cpu_num/(2*self.afl_count)-1) if (self.cpu_num/(2*self.afl_count)-1)!=0 else 1
 
         #time limited
@@ -97,14 +102,23 @@ class Compare_test:
         self.pre_for_test()
         #2. start the fuzzing
         self.pp=[]
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
         #for test
         if 0:
             for item in self.targets:
                 file_target_item=os.path.join(self.targets_dir,item)
                 self.start_one_compare_target(file_target_item)
+<<<<<<< HEAD
                       
                
+=======
+
+
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
         for item in self.targets:
             #2.1check resource
             while(True):
@@ -120,13 +134,14 @@ class Compare_test:
 
             #2.2 begin to start
             file_target_item=os.path.join(self.targets_dir,item)
-            
+            logger.info("begin to test %s",item)
             p = multiprocessing.Process(target=self.start_one_compare_target, args=(file_target_item,))
             p.start()
             self.pp.append(p)
 
         logger.info("end!!")
 
+<<<<<<< HEAD
     #----------------------------------------------------------------------
     def check_crashes_unique_in_version(self,binary_path,crahes_path):
         """
@@ -144,12 +159,31 @@ class Compare_test:
 
 
     #----------------------------------------------------------------------
+=======
+    #----------------------------------------------------------------------
+    def check_crashes_unique_in_version(self,binary_path,crahes_path):
+        """
+        check if the crashes is unique in the one version
+        True : unique in the version
+        False: a crash in both version and basik
+        """
+        cmd_test= binary_path+" "+ crahes_path
+        cmd_check=self.check_binary+" "+crahes_path
+        ret_test=os.system(cmd_test)
+        ret_check=os.system(cmd_check)	
+        if ret_check==0 and ret_test!=0:
+            return True
+        return False
+
+
+    #----------------------------------------------------------------------
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
     def start_one_compare_target(self,file_target_item):
         """"""
         #0. set some information
         test_start_time=time.time()
         item=os.path.basename(file_target_item) 
-        logger.info("begin to test %s",item)
+        logger.info("step in  to test %s",item)
         work_dir=os.path.join(self.workspace,item)
         if  os.path.exists(work_dir):
             shutil.rmtree(work_dir)
@@ -164,14 +198,24 @@ class Compare_test:
         binary_afl_path=os.path.join(file_target_item,item+"-afl")
         afl_engine=self.afl_engine_path
         fuzzer_afl=Fuzzer(binary_afl_path , work_dir, afl_count=afl_count, 
+<<<<<<< HEAD
+                                  time_limit=time_limit, seed_dir=seed_dir,  afl_engine=afl_engine, 
+                          input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
+=======
                           time_limit=time_limit, seed_dir=seed_dir,  afl_engine=afl_engine, 
                                   input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
 
         afl_engine=self.aflgo_engine_path
         binary_aflgo_instrument_path=os.path.join(file_target_item,item+"-aflgo_instrument")
         fuzzer_aflgo_instrument=Fuzzer(binary_aflgo_instrument_path, work_dir, afl_count=afl_count, 
+<<<<<<< HEAD
+                                               time_limit=time_limit, seed_dir=seed_dir, afl_engine=afl_engine, 
+                                       input_from=input_from, afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time="240m" )        
+=======
                                        time_limit=time_limit, seed_dir=seed_dir, afl_engine=afl_engine, 
                                                input_from=input_from, afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time="240m" )        
+>>>>>>> e96b1d7c4a35593cd34a6483b18fa333559ce30b
 
         #2. start the afl engines
         afl_start_time=time.time()
@@ -205,7 +249,7 @@ class Compare_test:
                     crashes_cached.add(afl_crahes_path)
                     if self.check_crashes_unique_in_version(binary_afl_path,afl_crahes_path):
                         first_afl_unique_crash=afl_crahes_path
-                        #logger.info("a crash unique: %s\n",afl_crahes_path)
+                        logger.info("a crash unique: %s\n",afl_crahes_path)
                         find_afl_unique_crash_flag=True
                         fuzzer_afl.remove_fuzzer()
                         break	
@@ -218,7 +262,7 @@ class Compare_test:
                     crashes_cached.add(aflgo_crahes_path)
                     if self.check_crashes_unique_in_version(binary_aflgo_instrument_path,aflgo_crahes_path):
                         first_aflgo_unique_crash=aflgo_crahes_path
-                        #logger.info("a crash unique: %s\n",aflgo_crahes_path)
+                        logger.info("a crash unique: %s\n",aflgo_crahes_path)
                         find_aflgo_unique_crash_flag=True
                         fuzzer_aflgo_instrument.remove_fuzzer()
                         break	

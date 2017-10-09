@@ -86,8 +86,8 @@ class Compare_test:
         self.afl_input_para=["@@"]
 
         #afl start nums and counts
-        self.afl_count=4  # for each number of test
-        self.cpu_num=160
+        self.afl_count=1  # for each number of test
+        self.cpu_num=8
         self.compare_upper_nums=(self.cpu_num/(2*self.afl_count)-1) if (self.cpu_num/(2*self.afl_count)-1)!=0 else 1
 
         #time limited
@@ -138,10 +138,14 @@ class Compare_test:
         True : unique in the version
         False: a crash in both version and basik
         """
-        cmd_test= binary_path+" "+ crahes_path
-        cmd_check=self.check_binary+" "+crahes_path
-        ret_test=os.system(cmd_test)
-        ret_check=os.system(cmd_check)	
+        cmd_test=[binary_path,crahes_path]
+        cmd_check=[self.check_binary,crahes_path]
+        
+        p=subprocess.Popen(cmd_test, stdout=subprocess.PIPE)
+        ret_test=p.wait()
+        p=subprocess.Popen(cmd_check, stdout=subprocess.PIPE)
+        ret_check=p.wait()        
+        
         if ret_check==0 and ret_test!=0:
             return True
         return False
@@ -243,6 +247,8 @@ class Compare_test:
             first_aflgo_crash_time="timeless"
 
         item_plot_path=os.path.join(self.plot_path,item)
+        if not os.path.exists(self.plot_path):
+            os.makedirs(self.plot_path)
         with open(item_plot_path,"wt") as f:
             f.write(item+":\n")
             f.write("first_afl_crash_time:"+str(first_afl_crash_time)+",second\n")

@@ -1,0 +1,6 @@
+afl_count:4
+time_limit:240m
+target:all
+crashes_sort:false
+time:10-08
+

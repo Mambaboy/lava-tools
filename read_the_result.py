@@ -10,7 +10,7 @@ logger = logging.getLogger("readplot")
 class One_Experiment:
     """"""
     #----------------------------------------------------------------------
-    def __init__(self,plot_dir=None):
+    def __init__(self,plot_dir=None,compare_baseline=0):
         """Constructor"""
         self.plot_dir=plot_dir
         self.info_dict=dict()
@@ -19,7 +19,9 @@ class One_Experiment:
         self.afl_found_num=0
         self.afl_found_list=list()
         self.aflgo_found_num=0
-        self.compare_baseline=60*60 #second, if found the crash time belown this baseline, ignore it
+        
+        #from para
+        self.compare_baseline=compare_baseline #second, if found the crash time belown this baseline, ignore it
 
         #init
         self.aflgo_found_list=list()
@@ -200,11 +202,16 @@ class One_Experiment:
 
 if __name__ == '__main__':
     logger.info("start the read for one experiment")
-    one_experiment=One_Experiment(plot_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/result/plot_out_2017-10-08")
+    
+    compare_baseline=0
+    one_experiment=One_Experiment(plot_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/result/plot_out_2017-10-10"
+                                  ,compare_baseline=compare_baseline)
+    
     one_experiment.get_infomation()
     one_experiment.save_info_dict()
-
+    #deal with the data
     one_experiment.compare_and_save_result()
+    #print out some information
     one_experiment.print_speed_compare()
     one_experiment.print_crash_found_number()
     one_experiment.print_different_crash()

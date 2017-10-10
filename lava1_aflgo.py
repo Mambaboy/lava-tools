@@ -19,7 +19,8 @@ class LAVA1:
     """"""
 
     #----------------------------------------------------------------------
-    def __init__(self,compile_flag="gcc",recalculate=False,force_rebuild=False):
+    def __init__(self,compile_flag="gcc",recalculate=False,force_rebuild=False,crash_extend_num=3,target_source_line=1,
+                 special_target=None):
         """Constructor"""
         self._global_config()
         
@@ -27,12 +28,15 @@ class LAVA1:
         self.compiler_flag=compile_flag
         self.recalculate=recalculate # default not calculate the distance again
         self.force_rebuild=force_rebuild
+        self.crash_extend_num=crash_extend_num
+        self.target_source_line=target_source_line # the target 
+        self.special_target=special_target
         
         #some init functions
         self._read_branches()
         
-        #self.special=["file-5.22.1415_R_0x12345678-0x12545678"]
-        self.test_targets=None
+        
+       
 
     #----------------------------------------------------------------------
     def _global_config(self):
@@ -53,7 +57,7 @@ class LAVA1:
         
         #global variable
         self.all_compiler_flag=["gcc","clang","aflgo_get","aflgo_instrument","afl"]
-        self.extendion_num=3
+        
         self.targets=set()
         self.exclude=set()
         self.branches=set()        
@@ -77,7 +81,7 @@ class LAVA1:
             p = subprocess.Popen(args, cwd=file_source_item_dir,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)            
             ret=p.wait()
             if ret != 0:
-                logger( "checkoout %s fail"%item)
+                logger.warning( "checkoout %s fail"%item)
                 return False             
         logger.info("checkout all files successful")
 
@@ -234,18 +238,18 @@ class LAVA1:
         #2. remove the old information
         if self.compiler_flag=="aflgo_get":
             file_output_item=os.path.join(self.output_dir,item)
-            for infos in os.listdir(file_output_item):
-                infos_path=os.path.join(file_output_item,infos)
-                if "BBtargets" in infos:
+            for files in os.listdir(file_output_item):
+                files_path=os.path.join(file_output_item,files)
+                if "BBtargets" in files:
                     continue
-                if "dot" in infos:
-                    shutil.rmtree(infos_path)
+                if "dot" in files:
+                    shutil.rmtree(files_path)
                     continue
                 #check if rm the distance out
-                if "distance" in infos:
+                if "distance" in files:
                     if not self.recalculate:
                         continue
-                os.remove(infos_path)
+                os.remove(files_path)
                 
      
         #2 build new
@@ -258,7 +262,7 @@ class LAVA1:
             p = subprocess.Popen(args,cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
             ret=p.wait()
             if ret < 0:
-                logger.info("make distclean fail,but not return:%s"%item)
+                logger.warning("make distclean fail,but not return:%s"%item)
         #3. autoreconf -f -i
         args = ["autoreconf","-i","-f"]
         p = subprocess.Popen(args, cwd=pwd,stdout=f, stderr=subprocess.STDOUT)            
@@ -319,8 +323,9 @@ class LAVA1:
     #----------------------------------------------------------------------
     def calculate_distance(self):
         """"""
-        if not self.test_targets is None:
-            self.targets=self.test_targets
+        if len(self.targets)==0:
+            self.targets=self.branches
+       
         for item in self.targets:
             file_item_output=os.path.join(self.output_dir,item)
             #check if should recalculate
@@ -342,16 +347,17 @@ class LAVA1:
                     logger.info( "calculate with aflgo successful: %s"%item)
                 else:
                     self.exclude.update([item])
-                    shutil.rmtree(file_item_output)
                     logger.warning( "calculate with aflgo fail: %s",item )
+                    shutil.rmtree(file_item_output) # remove the calculate distance fail
+                   
     #----------------------------------------------------------------------
     def _set_targets_item(self):
         """
         if has the BBtargets.txt, add to the targets set, and move the BBtargets.txt to the sub-output dir in aflgo_get
         if has the distance.cfg.txt and not empty, add to the targets in aflgo_instrument
         """
-        if not self.test_targets is None:
-            self.targets=self.test_targets
+        if not self.special_target is None:
+            self.targets=self.special_target
             return
         
         if self.compiler_flag !="aflgo_get" and self.compiler_flag!="aflgo_instrument":
@@ -361,10 +367,7 @@ class LAVA1:
             for item in self.branches:
                 file_output_item=os.path.join(self.output_dir,item)
                 file_output_item_checkfile_path=os.path.join(self.targets_dir,item,"BBtargets.txt")
-                if not os.path.exists(file_output_item_checkfile_path) or os.path.getsize(file_output_item_checkfile_path)==0:
-                    #remove the output dir if do not have target
-                    #if os.path.exists(file_target_output_item):
-                        #shutil.rmtree(file_target_output_item)           
+                if not os.path.exists(file_output_item_checkfile_path) or os.path.getsize(file_output_item_checkfile_path)==0:      
                     continue
                 if  not os.path.exists(file_output_item):
                     os.makedirs(file_output_item)
@@ -429,6 +432,9 @@ class LAVA1:
                         flag=False
                         break
                     content.append(line)
+                    if len(content)> self.target_source_line-1:
+                        break
+                    
             if not flag:
                 if os.path.exists(target_item_bbtargets_path):
                     os.remove(target_item_bbtargets_path)
@@ -440,7 +446,7 @@ class LAVA1:
                     continue
                 file_name=lines.split(":")[0]
                 loc_num  =int(lines.split(":")[1])
-                for j in xrange(self.extendion_num):
+                for j in xrange(self.crash_extend_num):
                     new_loc1=str(loc_num+j)
                     new_loc2=str(loc_num-j)
                     new_target1=file_name+":"+new_loc1+"\n"
@@ -464,7 +470,7 @@ class LAVA1:
         output_item_dir=os.path.join(self.output_dir,item)
         if not os.path.exists(output_item_dir):
             os.makedirs(output_item_dir)
-        shutil.copy(BBtarget_path, output_item_dir)            
+        shutil.copy(BBtarget_path, output_item_dir)  
 
     #----------------------------------------------------------------------
     def build_files_all(self,compiler_flag="gcc"):
@@ -514,16 +520,30 @@ class LAVA1:
 if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
-    lava1=LAVA1(force_rebuild=True,recalculate=False)
-    flag=1
     
-    if flag==1:
-        lava1.build_with_gcc()
-    elif flag==2:
-        lava1.build_with_aflgo_get()
-    elif flag==3: 
-        lava1.build_with_aflgo_instrument()
-    elif flag==4:
-        lava1.build_with_normal_afl(compiler_flag="afl")
-        
+    crash_extend_num=3
+    target_source_line=1
+    force_rebuild=False
+    recalculate=True
+    special_target=["file-5.22.4192_R_0x12345678-0x22345678","file-5.22.3479_R_0x12345678-0x12545678","file-5.22.2119_KT_0xda897fff","file-5.22.2048_R_0x12345678-0x12545678"]
+    #self.special=["file-5.22.1415_R_0x12345678-0x12545678"]  
+    
+    lava1=LAVA1(force_rebuild=force_rebuild,recalculate=recalculate,
+                crash_extend_num=crash_extend_num,target_source_line=target_source_line,special_target=special_target)
+    
+    
+    #flag=2
+    #if flag==1:
+        #lava1.build_with_gcc()
+    #elif flag==2:
+        #lava1.build_with_aflgo_get()
+    #elif flag==3: 
+        #lava1.build_with_aflgo_instrument()
+    #elif flag==4:
+        #lava1.build_with_normal_afl(compiler_flag="afl")
+    
+    lava1.build_with_aflgo_get()
+    #lava1.calculate_distance()
+    lava1.build_with_aflgo_instrument()
+    
     logger.info("successs")

@@ -19,12 +19,20 @@ class Compare_test:
     """"""
 
     #----------------------------------------------------------------------
-    def __init__(self):
+    def __init__(self,afl_count=1,cpu_num=8,alfgo_test_time_upper=4*60*60,aflgo_test_time='240m'):
         """Constructor"""
         self._global_config()
 
         #some init functions
         self._read_branches()
+        
+        #from para
+        self.afl_count=afl_count  # for each number of test
+        self.cpu_num=cpu_num     
+        self.alfgo_test_time_upper=alfgo_test_time_upper
+        self.aflgo_test_time=aflgo_test_time
+        #time limited for Fuzzer
+        self.time_limit=None# second
 
 
     #----------------------------------------------------------------------
@@ -43,7 +51,7 @@ class Compare_test:
         self.targets=set()
         self.exclude=set()
         self.branches=set()   
-        self.alfgo_test_time_upper=5*60*60 #second
+         #second
 
     #----------------------------------------------------------------------
     def _read_branches(self):
@@ -69,7 +77,7 @@ class Compare_test:
         self._set_targets()  
         #2. set the fuzzing config
         self.set_fuzzing_config()
-        
+
         #3. clean the workplace
         if os.path.exists(self.workspace):
             shutil.rmtree(self.workspace)
@@ -78,20 +86,17 @@ class Compare_test:
     def set_fuzzing_config(self):
         """"""
         self.workspace="/tmp/compare_test"
-
         self.seed_dir=os.path.join(os.path.dirname(self.targets_dir),"seed")
         self.afl_engine_path="/home/xiaosatianyu/workspace/git/afl/afl-fuzz"
         self.aflgo_engine_path="/home/xiaosatianyu/infomation/git-2/For_aflgo/aflgo/afl-fuzz"
         self.input_from="file"
         self.afl_input_para=["@@"]
 
-        #afl start nums and counts
-        self.afl_count=1  # for each number of test
-        self.cpu_num=8
+        #afl processs upper
         self.compare_upper_nums=(self.cpu_num/(2*self.afl_count)-1) if (self.cpu_num/(2*self.afl_count)-1)!=0 else 1
 
-        #time limited
-        self.time_limit=4*60*60 # second
+        
+        
 
 
     #----------------------------------------------------------------------
@@ -101,14 +106,14 @@ class Compare_test:
         self.pre_for_test()
         #2. start the fuzzing
         self.pp=[]
-        
+
         #for test
         if 0:
             for item in self.targets:
                 file_target_item=os.path.join(self.targets_dir,item)
                 self.start_one_compare_target(file_target_item)
-                      
-               
+
+
         for item in self.targets:
             #2.1check resource
             while(True):
@@ -124,7 +129,7 @@ class Compare_test:
 
             #2.2 begin to start
             file_target_item=os.path.join(self.targets_dir,item)
-            
+
             p = multiprocessing.Process(target=self.start_one_compare_target, args=(file_target_item,))
             p.start()
             self.pp.append(p)
@@ -140,12 +145,12 @@ class Compare_test:
         """
         cmd_test=[binary_path,crahes_path]
         cmd_check=[self.check_binary,crahes_path]
-        
+
         p=subprocess.Popen(cmd_test, stdout=subprocess.PIPE)
         ret_test=p.wait()
         p=subprocess.Popen(cmd_check, stdout=subprocess.PIPE)
         ret_check=p.wait()        
-        
+
         if ret_check==0 and ret_test!=0:
             return True
         return False
@@ -173,13 +178,13 @@ class Compare_test:
         afl_engine=self.afl_engine_path
         fuzzer_afl=Fuzzer(binary_afl_path , work_dir, afl_count=afl_count, 
                           time_limit=time_limit, seed_dir=seed_dir,  afl_engine=afl_engine, 
-                                  input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
+                          input_from=input_from, afl_input_para=afl_input_para,afl_flag="afl" )
 
         afl_engine=self.aflgo_engine_path
         binary_aflgo_instrument_path=os.path.join(file_target_item,item+"-aflgo_instrument")
         fuzzer_aflgo_instrument=Fuzzer(binary_aflgo_instrument_path, work_dir, afl_count=afl_count, 
                                        time_limit=time_limit, seed_dir=seed_dir, afl_engine=afl_engine, 
-                                               input_from=input_from, afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time="240m" )        
+                                       input_from=input_from, 			afl_input_para=afl_input_para,afl_flag="aflgo_instrument",aflgo_time=self.aflgo_test_time)        
 
         #2. start the afl engines
         afl_start_time=time.time()
@@ -207,10 +212,10 @@ class Compare_test:
             #check for the afl crashes
             fuzz_afl_crashes=fuzzer_afl.crashes()
             fuzz_afl_crashes.sort()
-            
+
             fuzz_aflgo_crashes=fuzzer_aflgo_instrument.crashes()  
             fuzz_aflgo_crashes.sort()            
-            
+
             if not find_afl_unique_crash_flag:
                 for afl_crahes_path in fuzz_afl_crashes:
                     if afl_crahes_path in crashes_cached:
@@ -272,7 +277,16 @@ if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
     ret=os.system("pkill -9 -f \"afl-fuzz\"")
-    compare_test=Compare_test()
+    
+    afl_count=2
+    cpu_num=160
+    alfgo_test_time_upper=8*60*60
+    aflgo_test_time='480m'
+    compare_test=Compare_test(afl_count=afl_count,cpu_num=cpu_num,alfgo_test_time_upper=alfgo_test_time_upper,
+                              aflgo_test_time=aflgo_test_time)
+    logger.info("cpu number is %d",cpu_num)
+    time.sleep(5)
+    #deal with
     compare_test.start_all_targets()
 
 

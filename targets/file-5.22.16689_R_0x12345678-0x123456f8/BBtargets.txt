@@ -3,13 +3,3 @@ apprentice.c:492
 apprentice.c:493
 apprentice.c:494
 apprentice.c:495
-file.c:372
-file.c:373
-file.c:374
-file.c:375
-file.c:376
-magic.c:247
-magic.c:248
-magic.c:249
-magic.c:250
-magic.c:251

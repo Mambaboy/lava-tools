@@ -1,5 +1,1 @@
-apprentice.c:3220
-apprentice.c:3221
 apprentice.c:3222
-apprentice.c:3223
-apprentice.c:3224

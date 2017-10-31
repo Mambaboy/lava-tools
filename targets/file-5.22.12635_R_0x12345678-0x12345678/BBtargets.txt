@@ -1,5 +1,1 @@
-funcs.c:60
-funcs.c:61
 funcs.c:62
-funcs.c:63
-funcs.c:64

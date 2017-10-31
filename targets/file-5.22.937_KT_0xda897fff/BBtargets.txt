@@ -1,5 +1,1 @@
-softmagic.c:948
-softmagic.c:949
 softmagic.c:950
-softmagic.c:951
-softmagic.c:952

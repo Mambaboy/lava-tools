@@ -141,7 +141,7 @@ class One_Experiment:
 
                 #2.1. check the baseline
                 if   int(value["first_afl_crash_time"])<self.compare_baseline and int(value["first_aflgo_crash_time"]) <self.compare_baseline:
-                    logger.info("%s is too easy, no need to analyse",key)
+                    #logger.info("%s is too easy, no need to analyse",key)
                     continue            
 
                 afl_minus_aflgo=afl_found_time-aflgo_found_time
@@ -203,14 +203,16 @@ class One_Experiment:
 if __name__ == '__main__':
     logger.info("start the read for one experiment")
     
-    compare_baseline=0
-    one_experiment=One_Experiment(plot_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/result/plot_out_2017-10-10"
+    compare_baseline=100
+    one_experiment=One_Experiment(plot_dir="/home/xiaosatianyu/infomation/git-2/lava_corpus/lava_corpus/lava-tools/result/plot_out_2017-10-19"
                                   ,compare_baseline=compare_baseline)
     
     one_experiment.get_infomation()
     one_experiment.save_info_dict()
+    
     #deal with the data
     one_experiment.compare_and_save_result()
+    
     #print out some information
     one_experiment.print_speed_compare()
     one_experiment.print_crash_found_number()

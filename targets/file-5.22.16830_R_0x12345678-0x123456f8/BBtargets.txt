@@ -1,5 +1,1 @@
-apprentice.c:581
-apprentice.c:582
 apprentice.c:583
-apprentice.c:584
-apprentice.c:585

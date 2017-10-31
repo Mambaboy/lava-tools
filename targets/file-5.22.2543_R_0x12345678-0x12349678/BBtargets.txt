@@ -1,5 +1,1 @@
-softmagic.c:713
-softmagic.c:714
 softmagic.c:715
-softmagic.c:716
-softmagic.c:717

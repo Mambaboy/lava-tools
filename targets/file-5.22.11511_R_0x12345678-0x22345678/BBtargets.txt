@@ -1,5 +1,1 @@
-readelf.c:836
-readelf.c:837
 readelf.c:838
-readelf.c:839
-readelf.c:840

@@ -1,5 +1,1 @@
-softmagic.c:1827
-softmagic.c:1828
 softmagic.c:1829
-softmagic.c:1830
-softmagic.c:1831

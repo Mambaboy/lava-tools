@@ -19,7 +19,7 @@ class LAVA1:
     """"""
 
     #----------------------------------------------------------------------
-    def __init__(self,compile_flag="gcc",recalculate=False,force_rebuild=False,crash_extend_num=3,target_source_line=1,
+    def __init__(self,compile_flag="gcc",recalculate=False,force_rebuild=False,target_extend_num=3,target_source_line=1,
                  special_target=None):
         """Constructor"""
         self._global_config()
@@ -28,12 +28,15 @@ class LAVA1:
         self.compiler_flag=compile_flag
         self.recalculate=recalculate # default not calculate the distance again
         self.force_rebuild=force_rebuild
-        self.crash_extend_num=crash_extend_num
+        self.target_extend_num=target_extend_num
         self.target_source_line=target_source_line # the target 
         self.special_target=special_target
         
         #some init functions
         self._read_branches()
+        
+        #set the target after the compiler_flag set
+        self._set_targets_item()        
         
         
        
@@ -91,15 +94,15 @@ class LAVA1:
         item=os.path.basename(file_source_item_dir)
         para_str="./configure --enable-static --disable-shared " 
         prefix=file_source_item_dir+"/lava-install"
-        CFLAGS="-ggdb -fvisibility=default"
-        CXXFLAGS="-ggdb -fvisibility=default"
+        CFLAGS="-ggdb -fvisibility=default -O0"
+        CXXFLAGS="-ggdb -fvisibility=default -O0"
         qutation='\"'  
         
         #for aflgo
         CC=self.aflgo_clang
         CXX=self.aflgo_clang_pp
         distance=os.path.join(self.output_dir,item,"distance.cfg.txt")
-        other_flag=" -v"  
+        other_flag=" -v "  
         
         #add to the flags
         CFLAGS+=" -distance="+distance+other_flag
@@ -116,13 +119,13 @@ class LAVA1:
         return [para_str]        
        
     #----------------------------------------------------------------------
-    def _get_configure_para_for_distance(self,file_source_item_dir):
+    def _get_configure_para_for_aflgo_get(self,file_source_item_dir):
         """"""
         item=os.path.basename(file_source_item_dir)
-        para_str="./configure --enable-static --disable-shared " 
+        para_str=" ./configure --enable-static --disable-shared " 
         prefix=file_source_item_dir+"/lava-install"
-        CFLAGS="-ggdb -fvisibility=default"
-        CXXFLAGS="-ggdb -fvisibility=default"
+        CFLAGS=" -ggdb -fvisibility=default  -O0"
+        CXXFLAGS=" -ggdb -fvisibility=default -O0"
         qutation='\"'  
         
         #for aflgo
@@ -130,7 +133,7 @@ class LAVA1:
         CXX=self.aflgo_clang_pp
         target=os.path.join(self.output_dir,item,"BBtargets.txt")
         outdir=os.path.join(self.output_dir,item)
-        other_flag=" -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"    
+        other_flag=" -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps "
         
         #add to the flags
         CFLAGS+=" -targets="+target+" -outdir="+outdir+other_flag
@@ -151,8 +154,8 @@ class LAVA1:
         """"""
         para_str="./configure --enable-static --disable-shared "
         prefix=file_source_item_dir+"/lava-install"
-        CFLAGS="-ggdb -fvisibility=default"
-        CXXFLAGS="-ggdb -fvisibility=default" 
+        CFLAGS="-ggdb -fvisibility=default -O0"
+        CXXFLAGS="-ggdb -fvisibility=default -O0" 
         qutation='\"' 
         #for gcc
         CC="gcc"
@@ -172,8 +175,8 @@ class LAVA1:
         """"""
         para_str="./configure --enable-static --disable-shared " 
         prefix=file_source_item_dir+"/lava-install"
-        CFLAGS="-ggdb -fvisibility=default"
-        CXXFLAGS="-ggdb -fvisibility=default" 
+        CFLAGS="-ggdb -fvisibility=default -O0"
+        CXXFLAGS="-ggdb -fvisibility=default -O0" 
         qutation='\"' 
         
         #for clang
@@ -195,8 +198,8 @@ class LAVA1:
         """"""
         para_str="./configure --enable-static --disable-shared " 
         prefix=file_source_item_dir+"/lava-install"
-        CFLAGS="-ggdb -fvisibility=default"
-        CXXFLAGS="-ggdb -fvisibility=default" 
+        CFLAGS="-ggdb -fvisibility=default -O0"
+        CXXFLAGS="-ggdb -fvisibility=default -O0" 
         qutation='\"' 
         
         #for clang
@@ -242,6 +245,8 @@ class LAVA1:
                 files_path=os.path.join(file_output_item,files)
                 if "BBtargets" in files:
                     continue
+                if "save"in files:
+                    continue
                 if "dot" in files:
                     shutil.rmtree(files_path)
                     continue
@@ -275,7 +280,7 @@ class LAVA1:
             cargs=self._get_configure_para_with_normal_clang(file_source_item_dir)
             logger.info("compiler the binary with normal clang")
         elif  self.compiler_flag=="aflgo_get":
-            cargs=self._get_configure_para_for_distance(file_source_item_dir)
+            cargs=self._get_configure_para_for_aflgo_get(file_source_item_dir)
             logger.info("compiler the binary with aflgo_get")
         elif self.compiler_flag=="aflgo_instrument":
             cargs=self._get_configure_para_for_instrument(file_source_item_dir)
@@ -302,23 +307,40 @@ class LAVA1:
         logger.info( "build %s successful"%item)
             
     #----------------------------------------------------------------------
-    def pre_deal_for_aflgo_get(self,file_item_output):
+    def pre_deal_for_cal_dis(self):
         """"""
-        #deal with bbnames
-        BB_names_path=os.path.join(file_item_output,"BBnames.txt")
-        BB_names_path_temp=os.path.join(file_item_output,"BBnames2.txt")
-        args="cat "+BB_names_path+" | rev | cut -d: -f2- | rev | sort | uniq > "+BB_names_path_temp +" && mv "+BB_names_path_temp+" "+BB_names_path
-        ret=os.system(args)
-        if ret !=0:
-            logger.error("error in dealing with bbnamess")
+        for item in self.targets:
+            #deal with bbnames
+            file_item_output_dir=os.path.join(self.output_dir,item)
+            BB_names_path=os.path.join(file_item_output_dir,"BBnames.txt")
+            if not os.path.exists(BB_names_path) and os.path.getsize(BB_names_path)==0 :
+                continue
+            BB_names_path_temp=os.path.join(file_item_output_dir,"BBnames2.txt")
+            args="cat "+BB_names_path+" | rev | cut -d: -f2- | rev | sort | uniq > "+BB_names_path_temp +" && mv "+BB_names_path_temp+" "+BB_names_path
+            ret=os.system(args)
+            if ret !=0:
+                logger.error("error in dealing with bbnamess")
+            
+            #deal with bbcalls
+            BB_calls_path=os.path.join(file_item_output_dir,"BBcalls.txt")
+            BB_calls_path_temp=os.path.join(file_item_output_dir,"BBcalls2.txt")      
+            args="cat "+BB_calls_path+ "  | sort | uniq > "+BB_calls_path_temp+" && mv "+BB_calls_path_temp+" "+BB_calls_path
+            ret=os.system(args)
+            if ret !=0:
+                logger.error("error in dealing with bbcalls")  
+                
+            #deal with ins_info
+            file_item_output_dir=os.path.join(self.output_dir,item)
+            ins_info_path=os.path.join(file_item_output_dir,"Ins_info.txt")
+            if not os.path.exists(ins_info_path) and os.path.getsize(ins_info_path)==0 :
+                continue
+            ins_info_path_temp=os.path.join(file_item_output_dir,"Ins_info2.txt")
+            args="cat "+ins_info_path+" | rev | cut -d: -f2- | rev | sort | uniq > "+ins_info_path_temp +" && mv "+ins_info_path_temp+" "+ins_info_path
+            ret=os.system(args)
+            if ret !=0:
+                logger.error("error in dealing with ins_info")            
         
-        #deal with bbcalls
-        BB_calls_path=os.path.join(file_item_output,"BBcalls.txt")
-        BB_calls_path_temp=os.path.join(file_item_output,"BBcalls2.txt")      
-        args="cat "+BB_calls_path+ "  | sort | uniq > "+BB_calls_path_temp+" && mv "+BB_calls_path_temp+" "+BB_calls_path
-        ret=os.system(args)
-        if ret !=0:
-            logger.error("error in dealing with bbnamess")        
+         
         
     #----------------------------------------------------------------------
     def calculate_distance(self):
@@ -336,7 +358,7 @@ class LAVA1:
             
             if not os.path.exists(file_item_output):
                 continue
-            self.pre_deal_for_aflgo_get(file_item_output)
+           
             file_item__src_dir=os.path.join(self.lava1_dir,item,"src")
             args = [self.script_getdistance+" "+file_item__src_dir+" "+file_item_output+" "+"file"]
             logger.info( "calculate the distance of %s"%item)
@@ -398,6 +420,8 @@ class LAVA1:
             if not os.path.exists(target_item_dir):
                 os.makedirs(target_item_dir) 
             file_target_item_binary_path=os.path.join(self.targets_dir,item,item+"-"+self.compiler_flag)
+            if os.path.exists(file_target_item_binary_path):
+                os.remove(file_target_item_binary_path)
             shutil.copy(file_item_src_path, file_target_item_binary_path)     
             #2. get the crash
             crash_item_src_path=os.path.join(self.lava1_dir,item,"CRASH_INPUT")
@@ -446,7 +470,7 @@ class LAVA1:
                     continue
                 file_name=lines.split(":")[0]
                 loc_num  =int(lines.split(":")[1])
-                for j in xrange(self.crash_extend_num):
+                for j in xrange(self.target_extend_num):
                     new_loc1=str(loc_num+j)
                     new_loc2=str(loc_num-j)
                     new_target1=file_name+":"+new_loc1+"\n"
@@ -477,17 +501,18 @@ class LAVA1:
         """
         @compiler_flag: gcc,clang,aflgo_get,aflgo_instrument,afl
         """
+
         #copy all the branches
         self.checkout_files_all_targets()
         #build all the branches
         self.compiler_flag=compiler_flag
-        #set the target after the compiler_flag set
-        self._set_targets_item()
+        
         for item in self.targets:
             file_target_dir=os.path.join(self.lava1_dir,item)
             flag=self._build_file_each(file_target_dir) 
         # get the output
         self.get_all_files_crash()
+        self.move_btrace_to_output()
 
     #----------------------------------------------------------------------
     def build_with_aflgo_get(self):
@@ -496,24 +521,41 @@ class LAVA1:
         self.make_BBtargets()
         #2. build all files with aflgo, but not instrument
         self.build_files_all(compiler_flag="aflgo_get")
-        #calculation
-        self.calculate_distance()
+        
+        #pre for cal distance,deal with all binaries
+        self.pre_deal_for_cal_dis() 
+        
     #----------------------------------------------------------------------
     def build_with_gcc(self):
         """"""
         self.build_files_all(compiler_flag="gcc")
         
-    
     #----------------------------------------------------------------------
     def build_with_aflgo_instrument(self):
         """"""
+        #calculation
+        self.calculate_distance()
+        
         self.build_files_all(compiler_flag="aflgo_instrument")
                       
     #----------------------------------------------------------------------
     def build_with_normal_afl(self,compiler_flag="afl"):
         """"""
         self.build_files_all(compiler_flag="afl")
-       
+    
+    #----------------------------------------------------------------------
+    def build_with_clang(self,compiler_flag="clang"):
+        """"""
+        self.build_files_all(compiler_flag="clang")
+    #----------------------------------------------------------------------
+    def move_btrace_to_output(self):
+        """"""
+        for item in os.listdir(self.targets_dir):
+            item_btrace_path=os.path.join(self.targets_dir,item,item)
+            item_output_dir=os.path.join(self.output_dir,item)
+            if os.path.exists(item_output_dir):
+                shutil.copy(item_btrace_path,item_output_dir)
+        
         
       
 
@@ -521,15 +563,20 @@ if __name__ == '__main__':
     coloredlogs.install()
     logger.info("start")
     
-    crash_extend_num=3
-    target_source_line=1
-    force_rebuild=False
+    target_extend_num=1 #target extend
+    target_source_line=1 #select from
+    force_rebuild=True
     recalculate=True
-    special_target=["file-5.22.4192_R_0x12345678-0x22345678","file-5.22.3479_R_0x12345678-0x12545678","file-5.22.2119_KT_0xda897fff","file-5.22.2048_R_0x12345678-0x12545678"]
-    #self.special=["file-5.22.1415_R_0x12345678-0x12545678"]  
+
+    special_target=["file-5.22.1460_KT_0xda897fff"]# ["file-5.22.16830_R_0x12345678-0x123456f8"] # "file-5.22.292_R_0x12345678-0x12545678"
     
     lava1=LAVA1(force_rebuild=force_rebuild,recalculate=recalculate,
-                crash_extend_num=crash_extend_num,target_source_line=target_source_line,special_target=special_target)
+                target_extend_num=target_extend_num,target_source_line=target_source_line,special_target=special_target)
+    #lava1.build_with_gcc()
+    #lava1.build_with_clang()
+    #lava1.build_with_normal_afl()
+    lava1.build_with_aflgo_get()
+    lava1.build_with_aflgo_instrument()
     
     
     #flag=2
@@ -542,8 +589,9 @@ if __name__ == '__main__':
     #elif flag==4:
         #lava1.build_with_normal_afl(compiler_flag="afl")
     
-    lava1.build_with_aflgo_get()
-    #lava1.calculate_distance()
-    lava1.build_with_aflgo_instrument()
+    #lava1.build_with_aflgo_get()
+    ##lava1.calculate_distance()
+    #lava1.build_with_aflgo_instrument()
+    #lava1.move_btrace_to_output()
     
     logger.info("successs")

@@ -1,5 +1,1 @@
-readelf.c:498
-readelf.c:499
 readelf.c:500
-readelf.c:501
-readelf.c:502

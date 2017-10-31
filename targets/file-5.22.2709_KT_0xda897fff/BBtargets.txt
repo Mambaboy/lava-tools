@@ -1,5 +1,1 @@
-softmagic.c:1207
-softmagic.c:1208
 softmagic.c:1209
-softmagic.c:1210
-softmagic.c:1211

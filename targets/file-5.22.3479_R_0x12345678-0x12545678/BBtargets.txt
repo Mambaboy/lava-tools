@@ -1,5 +1,1 @@
-asprintf.c:33
-asprintf.c:34
-asprintf.c:35
-asprintf.c:36
-asprintf.c:37
+funcs.c:71
